@@ -1,5 +1,68 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+/*
+12.800 de 1 real
+6.400 de 2 reais
+3.200 de 5 reais
+1.600 de 10 reais 
+800 de 20 reais
+400 de 50 reais
+200 de 250 reais
+100 de 450 reais
+
+*/
+
+
+// --- Constantes Globais Clientes ---
+#define MAX_CLIENTES 50
+#define TAM_CPF 15
+#define TAM_CONTA 11
+
+// --- Para o Historico de Saque (se for por cliente) ---
+#define MAX_SAQUES_POR_CLIENTE 10 // Maximo de saques que um cliente pode ter registrado
+#define MAX_TRANSACAO_INFO 50    // Tamanho da string para descrever cada transacao.
+
+// --- Para o Estoque de Cedulas do Caixa ---
+#define NUM_CEDULAS 8
+int valor_cedulas[NUM_CEDULAS] = {1, 2, 5, 10, 20, 50, 250, 450}; // Valores das cedulas
+int estoque_cedulas_atuais[NUM_CEDULAS] = {12800, 6400, 3200, 1600, 800, 400, 200, 100}; // Quantidade inicial 
+
+// --- Matrizes para os Dados dos Clientes (Globais) ---
+// Cada linha 'i' de cada matriz corresponde ao cliente 'i'
+char clientes_cpf[MAX_CLIENTES][TAM_CPF];
+char clientes_conta_corrente[MAX_CLIENTES][TAM_CONTA];
+double clientes_saldo[MAX_CLIENTES];
+int clientes_numero_saques_realizados[MAX_CLIENTES]; // Contador de saques para cada cliente
+int clientes_ativo[MAX_CLIENTES]; // 1 para ativo, 0 para inativo (exclusao logica)
+
+// Variável para manter o controle do número atual de clientes ativos
+int quantidade_clientes = 0;
+
+
+// --- Matrizes para o Historico de Saques POR CLIENTE ---
+// Historico detalhado por cliente
+// 1. Conta corrente       cpf         valor
+
+// Cada cliente_historico_saque[i][j] possui o valor do j saque do cliente i
+// E clientes_saques_count[i] possui quantos saques o cliente i já realizou
+double clientes_historico_saques_valores[MAX_CLIENTES][MAX_SAQUES_POR_CLIENTE]; //historico dos valores dos saques por clientes
+int clientes_saques_contador[MAX_CLIENTES]; // Quantos saques cada cliente realizou (usado como contador de indices)
+
+char clientes_historico_saques_desc[MAX_CLIENTES][MAX_SAQUES_POR_CLIENTE][MAX_TRANSACAO_INFO];
+
+
+void inicializar_historico_saque (){
+    for (int i = 0; i < MAX_CLIENTES; i++){
+        clientes_saques_contador[i] = 0;
+        for (int j = 0; j < MAX_CLIENTES; i++){
+            clientes_historico_saques_valores[i][j] = 0.0;
+        }
+    }
+}
+
+
 
 //objetivo:escolhe dentre as letras do alfabeto ('a'..'z') uma letra aleatoriamente
 //parametros: nenhum
@@ -19,7 +82,7 @@ char geraNumero() {
     int i;
     char numeros[] = { '0','1','2','3','4','5','6','7','8','9'};
 
-    i=rand()%9;
+    i=rand()%9 + 1;
     return(numeros[i]);
 }
 
@@ -83,6 +146,13 @@ void gera_cpf_valido(char cpf[]) {
 }
 
 
+
+
+// INICIO FUNCOES RELATORIOS
+void valorSacado(){}
+void valorSaldoExistente(){}
+void QtdCedulasExistentes(){}
+
 //AINDA EM DESENVOLVIMENTO
 void ExibirMenuSaque(){
     int opcaoSaque;
@@ -90,7 +160,6 @@ void ExibirMenuSaque(){
     printf("\n--- Realizar Saque ---\n");
     printf("Digite o numero da conta corrente (formato 999.999-x): ");
 }
-
 //objetivo:Gerenciar o menu de opções do relatorio
 //         Permite ao usuário selecionar ações como valor sacado, saldo existente etc
 //         Continua exibindo o menu até que o usuário escolha a opção 'Voltar'.
@@ -127,7 +196,7 @@ void MenuRelatorios (int opcaoRelatorio){
 void ExibirMenuRelatorios(){
     int opcaoRelatorio;
     do {
-        printf("\nMenu Cliente\n");
+        printf("\n Relatorios\n");
         printf("1 - Valores sacados\n");
         printf("2 - Valor do saldo existente\n");
         printf("3 - Quantidade de cedulas existentes\n");
@@ -141,6 +210,17 @@ void ExibirMenuRelatorios(){
         MenuRelatorios(opcaoRelatorio);
     } while(opcaoRelatorio != 4);
 }
+//FIM FUNCOES RELATORIOS
+
+
+
+
+void incluirClientes (){
+
+}
+void mostrarClientes(){}
+void alterarClientes(){}
+void excluirClientes(){}
 
 //objetivo:Gerenciar o menu de opções do cliente.
 //         Permite ao usuário selecionar ações como incluir, mostrar, alterar e excluir clientes.
@@ -151,22 +231,22 @@ void menuCliente (int opcao_cliente){
     switch(opcao_cliente){
     case 1:
         printf("Incluir Cliente\n");
-
+        incluirClientes();
         break;
     
     case 2:
         printf("Mostrar Clientes\n");
-
+        mostrarClientes();
         break;
     
     case 3:
         printf("Alterar Cliente\n");
-
+        alterarClientes();
         break;
 
     case 4:
         printf("Excluir Cliente\n");
-
+        excluirClientes();
         break;
 
     case 5:
@@ -180,6 +260,8 @@ void menuCliente (int opcao_cliente){
         break;
     }
 }
+
+
 
 //objetivo:Exibir o menu de opções do cliente.
 //parametros: nenhum
@@ -202,6 +284,13 @@ void exibirMenuCliente(){
         menuCliente(opcaoCliente);
     } while(opcaoCliente != 5);
 }
+
+
+
+
+
+
+
 
 //objetivo:Gerenciar o menu de opções do menu principal
 //         Permite ao usuário gerenciar os outros menus
@@ -259,11 +348,21 @@ void exibirMenu (){
 }
 
 
+
+
+
+
 int main (){
+    
+    srand(time(NULL));
     printf("Bem-Vindo ao Sistema!\n");
     exibirMenu();
 
     printf("\nSistema Encerrado.\n");
+
+
+
+
 
     return 0;
 }
