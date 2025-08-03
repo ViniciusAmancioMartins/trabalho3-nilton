@@ -3,6 +3,12 @@
 #include <string.h>
 #include <time.h>
 
+//ALTERAÇÕES FEITAS 31-07: modularizei a maior parte do codigo, e tambem iniciei a geracao de CPF, falta apenas fazer a parte de validacao e tals.
+
+
+
+
+
 /*
 12.800 de 1 real
 6.400 de 2 reais
@@ -99,17 +105,6 @@ void geraContaCorrente(char c[])
     // implemente aqui
 }
 
-// objetivo:verifica se um cpf no formato 999.999.999-99 e valido
-// parametros: cpf a ser verificado
-// retorno: 1 se cpf e valido ou 0 se cpf nao e valido
-int verifica_cpf_valido(char cpf[])
-{
-    int valido = 1;
-
-    // implemente aqui
-
-    return (valido);
-}
 
 // objetivo:insere pontuacoes '.' e '- ' em um cpf
 // parametros: cpf_origem o cpf recebido no format 99999999999
@@ -223,6 +218,73 @@ void gera_cpf_valido(char cpf[])
     //chamar funcao para inserir pontuacao:
     insere_pontuacao_cpf(cpf_temp_11_digitos, cpf);
 }
+
+// objetivo:verifica se um cpf no formato 999.999.999-99 e valido
+// parametros: cpf a ser verificado
+// retorno: 1 se cpf e valido ou 0 se cpf nao e valido
+int verifica_cpf_valido(char cpf[])
+{
+    int valido = 1; //0 para invalido
+    char cpf_apenas_digito[12];       //vetor temporario pra os digitos do cpf + '\0'
+    int i = 0;
+    int j = 0;
+
+    while(cpf[i] != '\0'){                      //enquanto o cpf != \0 'buffer', eu continuo verificando se esta tudo certo cada numero      
+        if (cpf[i] >= '0' && cpf[i] <= '9'){    //caso esteja, passo para uma variavel temp. para usar ela na verificacao
+            cpf_apenas_digito[j] = cpf[i];
+            j++;
+        }
+        i++;
+    }
+    cpf_apenas_digito[j] = '\0'; // garanto que a string terminou com o \0
+
+    if (strlen (cpf_apenas_digito) != 11){  //utilizo a funcao strlen ver o tamanho do cpf, caso seja diferente de 11, esta errado
+        valido = 0;
+    }
+
+    //FAZER A VERIFICACAO SE TODOS OS NUMEROS SAO IGUAIS
+    if (valido == 1){
+        int numerosIguais = 1; //assumo que todos os numeros do cpf sao iguais
+
+        for (int k = 0; k < 11; k++){
+            if(cpf_apenas_digito[k] != cpf_apenas_digito[0]){ //caso um numero seja diferente, eu pauso a verificacao
+                numerosIguais = 0;
+                break;
+            }
+        }
+
+        if (numerosIguais){
+            valido = 0; //todos os numeros iguais eh cpf invalido
+        }
+    }
+
+    if (valido == 1){
+        int primeiro_dv_fornecido = cpf_apenas_digito[9] - '0';
+        int segundo_dv_fornecido = cpf_apenas_digito[10] - '0'; //'0' serve para definir o char em numero e efetuar a conta
+
+        char cpf9_digitos_para_calcular[10];            //variavel criada para fazer as operacoes de verificacao
+        strcpy(cpf9_digitos_para_calcular, cpf_apenas_digito);      //copiar o cpf e colocar na variavel acima5
+        cpf9_digitos_para_calcular[9] = '\0';
+
+        int primeiroDVcalcular = obtem_primeiro_digito_verificador(cpf9_digitos_para_calcular);
+
+        char cpf10_digitos_para_calcular[11];
+        strcpy(cpf10_digitos_para_calcular, cpf_apenas_digito);
+        cpf10_digitos_para_calcular[9] = (char)(primeiro_dv_fornecido + '0');
+        cpf10_digitos_para_calcular[10] = '\0';
+
+        int segundoDVcalcular = obtem_segundo_digito_verificador(cpf10_digitos_para_calcular);
+
+        if (primeiro_dv_fornecido == primeiroDVcalcular && segundo_dv_fornecido == segundoDVcalcular){
+            valido = 1; //valido
+        } else {
+            valido = 0; //invalido
+        }
+    }
+
+    return (valido);
+}
+
 
 // INICIO FUNCOES RELATORIOS
 void valorSacado() {}
@@ -440,6 +502,8 @@ int main()
     gera_cpf_valido(meu_cpf_gerado);
     printf("CPF Gerado %d: %s\n", i + 1, meu_cpf_gerado);
 }
+
+
     exibirMenu();
 
 
