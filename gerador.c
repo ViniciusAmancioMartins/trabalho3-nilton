@@ -22,8 +22,9 @@
 
 // --- Constantes Globais Clientes ---
 #define MAX_CLIENTES 50
-#define TAM_CPF 15
-#define TAM_CONTA 11
+#define TAM_CPF 15         // "999.999.999-99\0" (14 chars + 1 \0)
+#define TAM_CONTA 11    // "999.999-X\0" (9 chars + 1 \0)
+#define TAM_RESPOSTA 5 // Para "SIM\0" ou "NAO\0"
 
 // --- Para o Historico de Saque (se for por cliente) ---
 #define MAX_SAQUES_POR_CLIENTE 10 // Maximo de saques que um cliente pode ter registrado
@@ -359,13 +360,157 @@ void ExibirMenuRelatorios()
 }
 // FIM FUNCOES RELATORIOS
 
-void incluirClientes()
+// --- FUNÇÕES AUXILIARES PARA CLIENTES ---
+
+// Função auxiliar para encontrar o índice de um cliente ativo pela conta.
+// Retorna o índice se o cliente for encontrado e ativo, -1 caso contrário.
+int encontrarClientePorConta(const char *conta)
 {
-    // GERAR CPF QUANDO FOR A PRIMEIRA VEZ, CHAMAR A FUNCAO GERAR CPF E TALS
+    for (int i = 0; i < MAX_CLIENTES; i++) // Percorre todo o array de clientes
+    {
+        // Verifica se o cliente está ativo E se a conta corrente corresponde
+        if (clientes_ativo[i] == 1 && strcmp(clientes_conta_corrente[i], conta) == 0)
+        {
+            return i; // Cliente encontrado e ativo no índice 'i'
+        }
+    }
+    return -1; // Cliente não encontrado ou inativo
 }
-void mostrarClientes() {}
+
+// Função auxiliar para verificar se o CPF ou a conta já existem entre clientes ATIVOS.
+// Retorna 1 se for duplicado, 0 caso contrário.
+int cliente_duplicado(const char* cpf, const char* conta)
+{
+    for (int i = 0; i < MAX_CLIENTES; i++) // Percorre todo o array de clientes
+    {
+        // APENAS verifica clientes ATIVOS
+        if (clientes_ativo[i] == 1) // Adicionado: verifica se o cliente está ativo
+        {
+            if (strcmp(cpf, clientes_cpf[i]) == 0 || strcmp(conta, clientes_conta_corrente[i]) == 0)
+            {
+                return 1; // Duplicado (CPF ou Conta já existe em cliente ativo)
+            }
+        }
+    }
+    return 0; // Não duplicado
+}
+
+// Função interna para realizar o processo de cadastro de um único cliente
+// É chamada por incluirClientes
+void realizarCadastroClienteInterno() { //desenvolver
+}
+
+
+void incluirClientes()// caso o cliente deseja incluir o cadastro chama a funao realizar cadastro cliente
+{
+    char resposta[TAM_RESPOSTA];
+
+    if (quantidade_clientes >= MAX_CLIENTES) // Primeira verificação de capacidade
+    {
+        printf("Numero maximo de clientes atingido.\n");
+        return;
+    }
+
+    printf("Gostaria de incluir um novo cliente? (SIM / NAO)\n");
+    scanf(" %s", resposta); // Espaço antes de %s para consumir qualquer newline pendente
+
+    // Converte a resposta para minúsculas
+    for (int i = 0; resposta[i]; i++)
+    {
+        resposta[i] = tolower(resposta[i]);
+    }
+
+    if (strcmp(resposta, "sim") == 0)
+    {
+        realizarCadastroClienteInterno(); // Chama a função que faz o trabalho real de cadastro
+    }
+    else if (strcmp(resposta, "nao") == 0)
+    {
+        printf("Cadastro nao realizado.\n");
+    }
+    else
+    {
+        printf("Resposta invalida. Por favor, digite 'sim' ou 'nao'.\n");
+    }
+}
+
+void mostrarClientes() {
+    printf("\n--- Lista de Clientes Cadastrados ---\n");
+
+    int clientes_exibidos = 0;
+    // Percorre todo o array para encontrar clientes ATIVOS
+    for (int i = 0; i < MAX_CLIENTES; i++)
+    {
+        if (clientes_ativo[i] == 1) // APENAS mostra clientes ATIVOS
+        {
+            printf("Cliente na Posicao %d:\n", i); // Mostrar a posição real do array
+            printf("CPF: %s\n", clientes_cpf[i]);
+            printf("Conta: %s\n", clientes_conta_corrente[i]);
+            printf("Saldo: %.2f\n", clientes_saldo[i]);
+            // Adicione outras informações se desejar, como número de saques
+            printf("Numero de Saques Realizados: %d\n", clientes_numero_saques_realizados[i]);
+            printf("--------------------------\n");
+            clientes_exibidos++;
+        }
+    }
+
+    if (clientes_exibidos == 0)
+    {
+        printf("Nenhum cliente ativo para exibir.\n");
+    }
+}
 void alterarClientes() {}
-void excluirClientes() {}
+void excluirClientes() {
+    char resposta[TAM_RESPOSTA];
+    char conta_alvo[TAM_CONTA];
+
+    if (quantidade_clientes == 0)
+    {
+        printf("Nenhum cliente cadastrado para exclusao.\n");
+        return;
+    }
+
+    printf("\n--- Excluir Cliente ---\n");
+    printf("Digite o numero da conta corrente a ser excluida: ");
+    scanf(" %s", conta_alvo);
+
+    int indice_cliente = encontrarClientePorConta(conta_alvo);
+
+    if (indice_cliente == -1)
+    {
+        printf("Erro: Conta corrente nao encontrada ou ja inativa.\n");
+        return;
+    }
+
+    // REQUISITO: A exclusão SOMENTE será permitida se não há nenhum saque realizado
+    if (clientes_saques_contador[indice_cliente] > 0) {
+        printf("Erro: Nao eh possivel excluir cliente com saques realizados.\n");
+        return;
+    }
+
+    printf("Gostaria de excluir a conta %s (CPF: %s)? (SIM / NAO)\n", clientes_conta_corrente[indice_cliente], clientes_cpf[indice_cliente]);
+    scanf(" %s", resposta);
+
+    for (int i = 0; resposta[i]; i++)
+    {
+        resposta[i] = tolower(resposta[i]);
+    }
+
+    if (strcmp(resposta, "sim") == 0)
+    {
+        // Lógica para a exclusão lógica
+        clientes_ativo[indice_cliente] = 0; // Marca como inativo
+        printf("Conta excluida com sucesso.\n");
+    }
+    else if (strcmp(resposta, "nao") == 0)
+    {
+        printf("Conta nao excluida.\n");
+    }
+    else
+    {
+        printf("Resposta invalida. Por favor, digite 'sim' ou 'nao'.\n");
+    }
+}
 
 // objetivo:Gerenciar o menu de opções do cliente.
 //          Permite ao usuário selecionar ações como incluir, mostrar, alterar e excluir clientes.
@@ -433,6 +578,12 @@ void exibirMenuCliente()
         menuCliente(opcaoCliente);
     } while (opcaoCliente != 5);
 }
+
+
+
+
+
+
 
 // objetivo:Gerenciar o menu de opções do menu principal
 //          Permite ao usuário gerenciar os outros menus
