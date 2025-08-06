@@ -225,65 +225,99 @@ void gera_cpf_valido(char cpf[])
 // retorno: 1 se cpf e valido ou 0 se cpf nao e valido
 int verifica_cpf_valido(char cpf[])
 {
-    int valido = 1; //0 para invalido
-    char cpf_apenas_digito[12];       //vetor temporario pra os digitos do cpf + '\0'
+    int valido = 1; // Assume que o CPF é válido por padrão
+    char cpf_apenas_digito[12]; // Vetor temporário para os 11 dígitos do cpf + '\0'
     int i = 0;
     int j = 0;
 
-    while(cpf[i] != '\0'){                      //enquanto o cpf != \0 'buffer', eu continuo verificando se esta tudo certo cada numero      
-        if (cpf[i] >= '0' && cpf[i] <= '9'){    //caso esteja, passo para uma variavel temp. para usar ela na verificacao
+    
+
+    // 1. Extrair apenas os dígitos do CPF e armazenar em cpf_apenas_digito
+    while (cpf[i] != '\0')
+    {
+        if (cpf[i] >= '0' && cpf[i] <= '9')
+        {
             cpf_apenas_digito[j] = cpf[i];
             j++;
         }
         i++;
     }
-    cpf_apenas_digito[j] = '\0'; // garanto que a string terminou com o \0
+    cpf_apenas_digito[j] = '\0'; // Garante que a string terminou com o \0
 
-    if (strlen (cpf_apenas_digito) != 11){  //utilizo a funcao strlen ver o tamanho do cpf, caso seja diferente de 11, esta errado
-        valido = 0;
+   
+
+    // Verifica o tamanho (deve ter exatamente 11 dígitos)
+    if (strlen(cpf_apenas_digito) != 11)
+    {
+        
+        valido = 0; // Marca como inválido
     }
 
-    //FAZER A VERIFICACAO SE TODOS OS NUMEROS SAO IGUAIS
-    if (valido == 1){
-        int numerosIguais = 1; //assumo que todos os numeros do cpf sao iguais
-
-        for (int k = 0; k < 11; k++){
-            if(cpf_apenas_digito[k] != cpf_apenas_digito[0]){ //caso um numero seja diferente, eu pauso a verificacao
-                numerosIguais = 0;
+    // Se ainda é válido, continua com a próxima verificação
+    if (valido == 1)
+    {
+        // 3. Verificar se todos os dígitos são iguais (ex: 111.111.111-11, 222.222.222-22)
+        int todos_digitos_iguais = 1; // Assume que são todos iguais
+        for (int k = 1; k < 11; k++)
+        {
+            if (cpf_apenas_digito[k] != cpf_apenas_digito[0])
+            {
+                todos_digitos_iguais = 0;
                 break;
             }
         }
-
-        if (numerosIguais){
-            valido = 0; //todos os numeros iguais eh cpf invalido
+        if (todos_digitos_iguais)
+        {
+            
+            valido = 0; // Marca como inválido
         }
     }
 
-    if (valido == 1){
+    // Se ainda é válido, continua com a próxima verificação
+    if (valido == 1)
+    {
+        // 4. Calcular e comparar o primeiro dígito verificador
+        char cpf9_digitos_temp[10];
+        strncpy(cpf9_digitos_temp, cpf_apenas_digito, 9);
+        cpf9_digitos_temp[9] = '\0';
+
+        
+
+        int primeiro_dv_calculado = obtem_primeiro_digito_verificador(cpf9_digitos_temp);
         int primeiro_dv_fornecido = cpf_apenas_digito[9] - '0';
-        int segundo_dv_fornecido = cpf_apenas_digito[10] - '0'; //'0' serve para definir o char em numero e efetuar a conta
 
-        char cpf9_digitos_para_calcular[10];            //variavel criada para fazer as operacoes de verificacao
-        strcpy(cpf9_digitos_para_calcular, cpf_apenas_digito);      //copiar o cpf e colocar na variavel acima5
-        cpf9_digitos_para_calcular[9] = '\0';
+        
 
-        int primeiroDVcalcular = obtem_primeiro_digito_verificador(cpf9_digitos_para_calcular);
-
-        char cpf10_digitos_para_calcular[11];
-        strcpy(cpf10_digitos_para_calcular, cpf_apenas_digito);
-        cpf10_digitos_para_calcular[9] = (char)(primeiro_dv_fornecido + '0');
-        cpf10_digitos_para_calcular[10] = '\0';
-
-        int segundoDVcalcular = obtem_segundo_digito_verificador(cpf10_digitos_para_calcular);
-
-        if (primeiro_dv_fornecido == primeiroDVcalcular && segundo_dv_fornecido == segundoDVcalcular){
-            valido = 1; //valido
-        } else {
-            valido = 0; //invalido
+        if (primeiro_dv_fornecido != primeiro_dv_calculado)
+        {
+            
+            valido = 0; // Marca como inválido
         }
     }
 
-    return (valido);
+    // Se ainda é válido, continua com a próxima verificação
+    if (valido == 1)
+    {
+        // 5. Calcular e comparar o segundo dígito verificador
+        char cpf10_digitos_temp[11];
+        strncpy(cpf10_digitos_temp, cpf_apenas_digito, 10);
+        cpf10_digitos_temp[10] = '\0';
+
+        
+
+        int segundo_dv_calculado = obtem_segundo_digito_verificador(cpf10_digitos_temp);
+        int segundo_dv_fornecido = cpf_apenas_digito[10] - '0';
+
+        
+
+        if (segundo_dv_fornecido != segundo_dv_calculado)
+        {
+            
+            valido = 0; // Marca como inválido
+        }
+    }
+
+    return valido; // Retorna o valor final da variável 'valido'
 }
 
 
@@ -648,10 +682,10 @@ int main()
     srand(time(NULL));
     printf("Bem-Vindo ao Sistema!\n");
 
-   char meu_cpf_gerado[TAM_CPF];
- for (int i = 0; i < 5; i++) {
-    gera_cpf_valido(meu_cpf_gerado);
-    printf("CPF Gerado %d: %s\n", i + 1, meu_cpf_gerado);
+   if (verifica_cpf_valido("057.957.321-41") == 1) {
+    printf("valido");
+} else {
+    printf("invalido");
 }
 
 
