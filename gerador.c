@@ -4,7 +4,7 @@
 #include <time.h>
 
 //ALTERAÇÕES FEITAS 31-07: modularizei a maior parte do codigo, e tambem iniciei a geracao de CPF, falta apenas fazer a parte de validacao e tals.
-
+//alterações efita 03/07: finalizei a 
 
 
 
