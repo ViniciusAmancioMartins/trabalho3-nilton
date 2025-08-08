@@ -5,7 +5,7 @@
 #include <ctype.h> // Adicionado para tolower, para garantir compilação se ainda não estiver nos seus includes
 
 // ALTERAÇÕES FEITAS 31-07: modularizei a maior parte do codigo, e tambem iniciei a geracao de CPF, falta apenas fazer a parte de validacao e tals.
-// alterações efita 03/07: finalizei a /*
+//  ALTERAÇÕES FEITAS 7:08: conta corrente feita. Arrumei tambem os codigos de clientes, pois estava faltando umas coisas. amem
 /*
 12.800 de 1 real
 6.400 de 2 reais
