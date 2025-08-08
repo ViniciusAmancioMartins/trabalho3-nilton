@@ -1,11 +1,11 @@
 # trabalho3-nilton
 Trabalho de faculdade.
-=====================================================================================================================================
+==========================================================================
 
 Sistema de Gerenciamento de Clientes e Caixa Eletrônico
 Um sistema em C para simular o gerenciamento de clientes de um banco e operações básicas de caixa eletrônico, incluindo cadastro de clientes, controle de saldos, registro de saques e relatórios.
 
-=====================================================================================================================================
+==========================================================================
 
 🚀 Funcionalidades
 Este sistema oferece as seguintes funcionalidades:
@@ -19,12 +19,12 @@ Alterar Cliente: (A ser implementado) Permite modificar dados de clientes existe
 
 Excluir Cliente: Realiza a exclusão lógica de um cliente, caso ele não tenha saques registrados.
 
-=====================================================================================================================================
+==========================================================================
 
 💸 Saque
 Realizar Saque: (Em desenvolvimento) Funcionalidade para que os clientes possam sacar dinheiro, com controle de cédulas.
 
-=====================================================================================================================================
+==========================================================================
 
 📊 Relatórios
 Valores Sacados: Exibe o histórico de valores sacados por cada cliente.
@@ -33,14 +33,14 @@ Valor do Saldo Existente: Mostra o saldo atual de todos os clientes ativos.
 
 Quantidade de Cédulas Existentes: Apresenta o estoque atual de cédulas disponíveis no caixa.
 
-=====================================================================================================================================
+==========================================================================
 
 🔒 Validação e Geração de CPF
 Inclui funções para validar CPFs (verificando formato, dígitos e casos especiais de CPFs com todos os dígitos iguais).
 
 Capacidade de gerar CPFs válidos aleatoriamente, com formatação e cálculo dos dígitos verificadores.
 
-=====================================================================================================================================
+==========================================================================
 
 📋 Variáveis, Vetores e Matrizes Globais
 O sistema utiliza diversas variáveis, vetores e matrizes globais para armazenar e gerenciar os dados.
@@ -60,7 +60,7 @@ MAX_TRANSACAO_INFO: (Não utilizado diretamente no código fornecido para este p
 
 NUM_CEDULAS: Número de diferentes tipos de cédulas disponíveis no caixa (atualmente 8).
 
-=====================================================================================================================================
+==========================================================================
 
 💰 Estoque de Cédulas do Caixa
 valor_cedulas[NUM_CEDULAS]: Um vetor que armazena os valores nominais de cada cédula disponível no caixa.
@@ -71,7 +71,7 @@ estoque_cedulas_atuais[NUM_CEDULAS]: Um vetor que armazena a quantidade atual de
 
 Exemplo: {12800, 6400, 3200, 1600, 800, 400, 200, 100} para 1 real, 2 reais, etc.
 
-=====================================================================================================================================
+==========================================================================
 
 👤 Dados dos Clientes
 As seguintes matrizes armazenam as informações dos clientes. Cada índice i em todas essas matrizes corresponde aos dados de um único cliente.
@@ -92,7 +92,7 @@ clientes_ativo[MAX_CLIENTES]: Um vetor de tipo int que indica o status do client
 
 quantidade_clientes: Uma variável inteira que rastreia o número total de clientes ativos cadastrados no sistema.
 
-=====================================================================================================================================
+==========================================================================
 
 📚 Histórico de Saques por Cliente
 clientes_historico_saques_valores[MAX_CLIENTES][MAX_SAQUES_POR_CLIENTE]: Uma matriz de tipo double que armazena os valores de cada saque individual realizado por cada cliente.
@@ -101,7 +101,7 @@ clientes_historico_saques_valores[i][j] representa o valor do j-ésimo saque do 
 
 clientes_saques_contador[MAX_CLIENTES]: Um vetor de tipo int que funciona como um contador para o número de saques já registrados para cada cliente específico. Ele também atua como o próximo índice disponível para registrar um novo saque para aquele cliente.
 
-=====================================================================================================================================
+==========================================================================
 🗺️ Estrutura do Código
 O código está organizado em funções modularizadas para facilitar a manutenção e leitura:
 
