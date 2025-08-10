@@ -81,6 +81,10 @@ void MENU_PRINCIPAL(int opcao_principal);
 void exibirMenu();
 */
 
+
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void inicializar_historico_saque()
 {
     for (int i = 0; i < MAX_CLIENTES; i++)
@@ -93,6 +97,7 @@ void inicializar_historico_saque()
     }
 }
 
+
 // objetivo:escolhe dentre as letras do alfabeto ('a'..'z') uma letra aleatoriamente
 // parametros: nenhum
 // retorno:a letra do alfabeto
@@ -104,6 +109,7 @@ char geraAlfabeto()
     return (letras[i] - 32);
 }
 
+
 // objetivo:escolhe dentre os numeros ('0'..'9') uma numero aleatoriamente
 // parametros: nenhum
 // retorno:o numero
@@ -114,6 +120,7 @@ char geraNumero()
     i = rand() % 10;
     return (numeros[i]);
 }
+
 
 // objetivo:gera aleatoriamente um numero de conta corrente no formato 999.999-X
 // parametros: c onde armazera a conta gerada
@@ -142,6 +149,7 @@ void geraContaCorrente(char c[]) // XXX.XXXX-J
                  // Se TAM_CONTA é 11, ele tem espaço suficiente.
 }
 
+
 // objetivo:insere pontuacoes '.' e '- ' em um cpf
 // parametros: cpf_origem o cpf recebido no format 99999999999
 //             cpf_destino o cpf com as pontuacoes inseridas no formato 999.999.999-99
@@ -168,6 +176,7 @@ void insere_pontuacao_cpf(char cpf_origem[], char cpf_destino[])
     }
     cpf_destino[jDestino] = '\0';
 }
+
 
 // objetivo:calcula o primeiro digito verificador de um cpf no formato 999999999
 // parametros: cpf o cpf sem os digitos verificadores
@@ -197,6 +206,7 @@ int obtem_primeiro_digito_verificador(char cpf[])
     return (digito);
 }
 
+
 // objetivo:calcula o segundo digito verificador de um cpf no formato 999999999
 // parametros: cpf sem os digitos verificadores
 // retorno: o calculo do segundo digito verificador
@@ -224,6 +234,7 @@ int obtem_segundo_digito_verificador(char cpf[])
 
     return (digito);
 }
+
 
 // objetivo:gera aleatoriamente um cpf valido no formato 999.999.999-99
 // parametros: cpf onde sera armazenado o cpf valido
@@ -254,6 +265,7 @@ void gera_cpf_valido(char cpf[])
     // chamar funcao para inserir pontuacao:
     insere_pontuacao_cpf(cpf_temp_11_digitos, cpf);
 }
+
 
 // objetivo:verifica se um cpf no formato 999.999.999-99 e valido
 // parametros: cpf a ser verificado
@@ -337,6 +349,7 @@ int verifica_cpf_valido(char cpf[])
     return valido; // Retorna o valor final da variável 'valido'
 }
 
+
 // INICIO FUNCOES RELATORIOS
 // objetivo: Exibe o relatório de valores sacados por todos os clientes
 // parâmetros: nenhum
@@ -374,6 +387,7 @@ void valorSacado()
     }
 }
 
+
 // objetivo: Exibe o relatório do valor do saldo existente de todos os clientes ativos
 // parâmetros: nenhum
 // retorno: nenhum
@@ -396,6 +410,7 @@ void valorSaldoExistente()
     }
 }
 
+
 // objetivo: Exibe o relatório da quantidade de cédulas existentes no caixa
 // parâmetros: nenhum
 // retorno: nenhum
@@ -415,7 +430,11 @@ void QtdCedulasExistentes()
         printf("Nenhuma cedula existente.\n");
     }
 }
-// AINDA EM DESENVOLVIMENTO
+
+
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void ExibirMenuSaque()
 {
     double valor_saque;
@@ -576,13 +595,15 @@ void ExibirMenuSaque()
         }
 
         printf("\nSaque de R$ %.2f realizado com sucesso!\n", valor_saque);
-        printf("Voce realizou %d de %d saques disponiveis a voce.\n", clientes_numero_saques_realizados[indice_do_cliente], limites_saques_por_clientes);
+        printf("Voce realizou %d de %d saques disponiveis.\n", clientes_numero_saques_realizados[indice_do_cliente], limites_saques_por_clientes);
     }
     else
     {
         printf("Saque cancelado pelo usuario\n");
+        return;
     }
 }
+
 
 // objetivo:Gerenciar o menu de opções do relatorio
 //          Permite ao usuário selecionar ações como valor sacado, saldo existente etc
@@ -611,6 +632,7 @@ void MenuRelatorios(int opcaoRelatorio)
     }
 }
 
+
 // objetivo:Exibir o menu de Relatorios
 // parámetros: nenhum
 // retorno:nenhum
@@ -636,6 +658,8 @@ void ExibirMenuRelatorios()
     } while (opcaoRelatorio != 4);
 }
 // FIM FUNCOES RELATORIOS
+
+
 // --- FUNÇÕES AUXILIARES PARA CLIENTES ---
 // Função auxiliar para encontrar o índice de um cliente ativo pela conta.
 // Retorna o índice se o cliente for encontrado e ativo, -1 caso contrário.
@@ -651,6 +675,8 @@ int encontrarClientePorConta(const char *conta)
     }
     return -1; // Cliente não encontrado ou inativo
 }
+
+
 // Função auxiliar para verificar se o CPF ou a conta já existem entre clientes ATIVOS.
 // Retorna 1 se for duplicado, 0 caso contrário.
 int cliente_duplicado(const char *cpf, const char *conta)
@@ -668,6 +694,8 @@ int cliente_duplicado(const char *cpf, const char *conta)
     }
     return 0; // Não duplicado
 }
+
+
 // Função interna para realizar o processo de cadastro de um único cliente
 // É chamada por incluirClientes
 void realizarCadastroClienteInterno()
@@ -764,6 +792,10 @@ void realizarCadastroClienteInterno()
     }
 }
 
+
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void incluirClientes() // caso o cliente deseja incluir o cadastro chama a funao realizar cadastro cliente
 {
     char resposta[TAM_RESPOSTA];
@@ -815,6 +847,11 @@ void incluirClientes() // caso o cliente deseja incluir o cadastro chama a funao
         }
     } while (resposta_valida == 0);
 }
+
+
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void mostrarClientes()
 {
     printf("\n--- Lista de Clientes Cadastrados ---\n");
@@ -841,10 +878,18 @@ void mostrarClientes()
     }
 }
 
-// PRECISA DESENVOLVER AINDA
+
+// objetivo:---
+// parâmetros: nenhum
+// retorno:nenhum
 void alterarClientes()
 {
 }
+
+
+// objetivo: ---
+// parâmetros: nenhum
+// retorno:nenhum
 void excluirClientes()
 {
     char resposta[TAM_RESPOSTA];
@@ -913,6 +958,8 @@ void excluirClientes()
         }
     } while (resposta_valida_encontrada == 0); // Continua até uma resposta válida ser dada
 }
+
+
 // objetivo:Gerenciar o menu de opções do cliente.
 //          Permite ao usuário selecionar ações como incluir, mostrar, alterar e excluir clientes.
 //          Continua exibindo o menu até que o usuário escolha a opção 'Voltar'.
@@ -946,6 +993,8 @@ void menuCliente(int opcao_cliente)
         break;
     }
 }
+
+
 // objetivo:Exibir o menu de opções do cliente.
 // parámetros: nenhum
 // retorno:nenhum
@@ -971,11 +1020,15 @@ void exibirMenuCliente()
         menuCliente(opcaoCliente);
     } while (opcaoCliente != 5);
 }
+
+
 // objetivo:Gerenciar o menu de opções do menu principal
 //          Permite ao usuário gerenciar os outros menus
 //          Continua exibindo o menu até que o usuário escolha a opção 'finalizar'.
 // parámetros: nenhum
 // retorno:nenhum
+
+
 void MENU_PRINCIPAL(int opcao_principal)
 {
     switch (opcao_principal)
@@ -997,6 +1050,8 @@ void MENU_PRINCIPAL(int opcao_principal)
         break;
     }
 }
+
+
 // objetivo:Exibir o menu de opções do menu principal
 // parámetros: nenhum
 // retorno:nenhum
@@ -1021,6 +1076,7 @@ void exibirMenu()
         MENU_PRINCIPAL(opcao_printar);
     } while (opcao_printar != 4);
 }
+
 
 int main()
 {
