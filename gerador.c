@@ -28,6 +28,7 @@
 
 // --- Para o Estoque de Cedulas do Caixa ---
 #define NUM_CEDULAS 8
+#define limites_saques_por_clientes 100
 int valor_cedulas[NUM_CEDULAS] = {1, 2, 5, 10, 20, 50, 250, 450};                        // Valores das cedulas
 int estoque_cedulas_atuais[NUM_CEDULAS] = {12800, 6400, 3200, 1600, 800, 400, 200, 100}; // Quantidade inicial
 
@@ -35,7 +36,7 @@ int estoque_cedulas_atuais[NUM_CEDULAS] = {12800, 6400, 3200, 1600, 800, 400, 20
 // Cada linha 'i' de cada matriz corresponde ao cliente 'i'
 char clientes_cpf[MAX_CLIENTES][TAM_CPF];              // clientes_cpf[0][057.957321-41]
 char clientes_conta_corrente[MAX_CLIENTES][TAM_CONTA]; // clientes_conta[0][XXX.XXXX-J]
-double clientes_saldo[MAX_CLIENTES];                   // clientes_saldo[0] = 200 reais
+double total_money_retirado_por_cliente[MAX_CLIENTES]; // clientes_saldo[0] = 200 reais
 int clientes_numero_saques_realizados[MAX_CLIENTES];   // Contador de saques para cada cliente || //clientes_numeros_saques_realizados[0] = nº saques
 int clientes_ativo[MAX_CLIENTES];                      // 1 para ativo, 0 para inativo (exclusao logica) || clientes_ativo[0] = 0
 // se (clientes_ativo[i] = 0) entao
@@ -382,11 +383,11 @@ void valorSaldoExistente()
     int clientes_com_saldo = 0;
     for (int i = 0; i < MAX_CLIENTES; i++)
     {
-        if (clientes_ativo[i] == 1 && clientes_saldo[i] > 0)
+        if (clientes_ativo[i] == 1 && total_money_retirado_por_cliente[i] > 0)
         {
             clientes_com_saldo++;
             printf("RS valor por extenso\n");
-            printf("     RS %.2f\n", clientes_saldo[i]);
+            printf("     RS %.2f\n", total_money_retirado_por_cliente[i]);
         }
     }
     if (clientes_com_saldo == 0)
@@ -417,9 +418,170 @@ void QtdCedulasExistentes()
 // AINDA EM DESENVOLVIMENTO
 void ExibirMenuSaque()
 {
-    int opcaoSaque;
-    printf("\n--- Realizar Saque ---\n");
-    printf("Digite o numero da conta corrente (formato 999.999-x): ");
+    double valor_saque;
+    int indice_do_cliente = -1;
+    char conta_digitada[TAM_CONTA];
+    int flaguizinha = -1;
+
+    if (quantidade_clientes == 0)
+    {
+        printf("\n ---Nenhum cliente registrado para poder efetuar o saque.---\n");
+        return;
+    }
+
+    // --- Entrada da conta ---
+    do
+    {
+        printf("\n--- Realizar Saque ---\n");
+        printf("Digite o numero da conta corrente (formato 999.999-x): ");
+        int scan_status = scanf(" %10s", conta_digitada);
+
+        if (scan_status != 1)
+        {
+            printf("Entrada invalida! Por favor, digite a conta no formato pedido.\n");
+            while (getchar() != '\n')
+                ;
+            continue;
+        }
+
+        indice_do_cliente = encontrarClientePorConta(conta_digitada);
+
+        if (indice_do_cliente == -1)
+        {
+            printf("ERRO: Conta corrente nao encontrada ou inativa. Tente novamente\n");
+        }
+        else
+        {
+            if (clientes_numero_saques_realizados[indice_do_cliente] >= limites_saques_por_clientes)
+            {
+                printf("Erro: O cliente ja atingiu o limite de %d saques.\n", limites_saques_por_clientes);
+                return;
+            }
+            break;
+        }
+    } while (1);
+
+    // --- Entrada do valor ---
+    do
+    {
+        printf("Digite o valor do saque: R$ ");
+        int leitura_saque = scanf("%lf", &valor_saque);
+
+        if (leitura_saque != 1)
+        {
+            printf("Valor invalido! Por favor, digite um valor numerico\n");
+            while (getchar() != '\n')
+                ;
+            continue;
+        }
+
+        while (getchar() != '\n')
+            ;
+
+        if (valor_saque <= 0)
+        {
+            printf("Erro: O valor de saque precisa ser maior que ZERO. Tente novamente!\n");
+            continue;
+        }
+        else
+        {
+            flaguizinha = 1; // Corrigido: agora vai sair do loop
+        }
+    } while (flaguizinha == 0);
+
+    // --- Distribuição de cédulas ---
+    int cedulas_a_dispensar[NUM_CEDULAS] = {0};
+    int valor_restante = (int)valor_saque;
+
+    if (valor_restante <= 0)
+    {
+        printf("Erro interno: Valor de saque invalido para processamento de cedulas.\n");
+        return;
+    }
+
+    for (int i = NUM_CEDULAS - 1; i >= 0; i--)
+    {
+        if (valor_restante > 0 && estoque_cedulas_atuais[i] > 0)
+        {
+            int valor_cedula_temp = valor_cedulas[i];
+            int qtd_necessaria_dessa_cedula = valor_restante / valor_cedula_temp;
+
+            int qtd_dispensar_final = qtd_necessaria_dessa_cedula;
+            if (qtd_necessaria_dessa_cedula > estoque_cedulas_atuais[i])
+            {
+                qtd_dispensar_final = estoque_cedulas_atuais[i];
+            }
+
+            cedulas_a_dispensar[i] = qtd_dispensar_final;
+            valor_restante -= (qtd_dispensar_final * valor_cedula_temp);
+        }
+    }
+
+    if (valor_restante > 0) // Corrigido: agora verifica o resto, não o valor original
+    {
+        printf("Erro: Nao foi possivel dispensar o valor de R$ %.2f com as cedulas em nosso caixa\n", valor_saque);
+        printf("Por favor, tente um valor diferente!\n");
+        return;
+    }
+
+    // --- Confirmação do saque ---
+    printf("\n---Confirmacao do saque---\n");
+    printf(" Cliente: %s (CPF: %s)\n", clientes_conta_corrente[indice_do_cliente], clientes_cpf[indice_do_cliente]);
+    printf(" Valor solicitado: R$ %.2f\n", valor_saque);
+    printf(" Cedulas a serem dispensadas:\n");
+
+    for (int i = NUM_CEDULAS - 1; i >= 0; i--)
+    {
+        if (cedulas_a_dispensar[i] > 0)
+        {
+            printf(" %d notas de R$%d,00\n", cedulas_a_dispensar[i], valor_cedulas[i]);
+        }
+    }
+
+    char confirmacao_resposta[TAM_RESPOSTA];
+    printf("Confirmar saque? (SIM / NAO)\n");
+    int scan_status_confirmacao = scanf(" %s", confirmacao_resposta);
+
+    if (scan_status_confirmacao != 1)
+    {
+        printf("Entrada invalida! Saque cancelado.\n");
+        while (getchar() != '\n')
+            ;
+        return;
+    }
+
+    for (int i = 0; confirmacao_resposta[i]; i++)
+    {
+        confirmacao_resposta[i] = tolower(confirmacao_resposta[i]);
+    }
+
+    if (strcmp(confirmacao_resposta, "sim") == 0)
+    {
+        clientes_numero_saques_realizados[indice_do_cliente]++;
+        total_money_retirado_por_cliente[indice_do_cliente] += valor_saque;
+
+        for (int i = 0; i < NUM_CEDULAS; i++)
+        {
+            estoque_cedulas_atuais[i] -= cedulas_a_dispensar[i];
+        }
+
+        if (clientes_saques_contador[indice_do_cliente] < MAX_SAQUES_POR_CLIENTE)
+        {
+            clientes_historico_saques_valores[indice_do_cliente][clientes_saques_contador[indice_do_cliente]] = valor_saque;
+            clientes_saques_contador[indice_do_cliente]++;
+        }
+        else
+        {
+            printf("Aviso: Limite de registros de saques individuais para este cliente atingido.\n");
+        }
+
+        printf("\nSaque de R$ %.2f realizado com sucesso!\n", valor_saque);
+        printf("Voce realizou %d de %d saques disponiveis a voce.\n", clientes_numero_saques_realizados[indice_do_cliente], limites_saques_por_clientes);
+    }
+    else
+    {
+        printf("Saque cancelado pelo usuario\n");
+    }
 }
 
 // objetivo:Gerenciar o menu de opções do relatorio
@@ -579,7 +741,7 @@ void realizarCadastroClienteInterno()
             strcpy(clientes_cpf[indice_disponivel], novo_cpf_para_cliente);
             strcpy(clientes_conta_corrente[indice_disponivel], nova_conta_para_cliente);
             // inicializar todas as informações do cliente
-            clientes_saldo[indice_disponivel] = 0.0;
+            total_money_retirado_por_cliente[indice_disponivel] = 0.0;
             clientes_numero_saques_realizados[indice_disponivel] = 0;
             clientes_saques_contador[indice_disponivel] = 0;
             clientes_ativo[indice_disponivel] = 1;
@@ -665,7 +827,7 @@ void mostrarClientes()
             printf("Cliente na Posicao %d:\n", i); // Mostrar a posição real do array
             printf("CPF: %s\n", clientes_cpf[i]);
             printf("Conta: %s\n", clientes_conta_corrente[i]);
-            printf("Saldo: %.2f\n", clientes_saldo[i]);
+            printf("Saldo: %.2f\n", clientes_historico_saques_valores[i]);
             // Adicione outras informações se desejar, como número de saques
             printf("Numero de Saques Realizados: %d\n", clientes_numero_saques_realizados[i]);
             printf("--------------------------\n");
@@ -863,26 +1025,9 @@ void exibirMenu()
 int main()
 {
     srand(time(NULL));
-    // É uma boa prática inicializar o histórico de saques uma vez no início do programa.
+    
     inicializar_historico_saque();
     printf("Bem-Vindo ao Sistema!\n");
-
-    // Este bloco é para teste de geração de conta e validação de CPF.
-    // Pode ser removido ou comentado após os testes iniciais.
-    printf(" ");
-    char nova_conta[TAM_CONTA];    // Declara um array para a conta, com o tamanho definido
-    geraContaCorrente(nova_conta); // Chama a função, passando o array
-    printf("Conta Corrente Gerada: %s\n", nova_conta);
-    printf("");
-    if (verifica_cpf_valido("057.957.321-41") == 1)
-    {
-        printf("CPF 057.957.321-41 e valido\n");
-    }
-    else
-    {
-        printf("CPF 057.957.321-41 e invalido\n");
-    }
-
     exibirMenu();
 
     printf("\nSistema Encerrado.\n");
