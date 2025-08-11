@@ -884,6 +884,95 @@ void mostrarClientes()
 // retorno:nenhum
 void alterarClientes()
 {
+    char resposta[TAM_RESPOSTA];
+    char conta_alvo[TAM_CONTA];
+    int indice_cliente;
+
+    if (quantidade_clientes == 0)
+    {
+        printf("Nenhum cliente cadastrado para alterar.\n");
+        return;
+    }
+
+    printf("Gostaria de alterar conta e cpf? (SIM / NAO)\n");
+    scanf(" %s", resposta);
+
+    for (int i = 0; resposta[i]; i++)
+    {
+        resposta[i] = tolower(resposta[i]);
+    }
+
+    if (strcmp(resposta, "sim") == 0)
+    {
+        printf("Digite o numero da conta atual do cliente: ");
+        scanf(" %s", conta_alvo);
+
+        indice_cliente = encontrarClientePorConta(conta_alvo);
+
+        if (indice_cliente == -1 || clientes_ativo[indice_cliente] == 0)
+        {
+            printf("Conta nao encontrada ou cliente inativo.\n");
+            return;
+        }
+
+        // Verifica se já fez saques
+        if (clientes_numero_saques_realizados[indice_cliente] > 0)
+        {
+            printf("Alteracao nao permitida: cliente ja realizou saques.\n");
+            return;
+        }
+
+        // Gerar nova conta corrente (garantindo que não exista duplicata)
+        char nova_conta[TAM_CONTA];
+        int duplicada;
+        do
+        {
+            geraContaCorrente(nova_conta);
+            duplicada = 0;
+            for (int i = 0; i < quantidade_clientes; i++)
+            {
+                if (i != indice_cliente && clientes_ativo[i] == 1 &&
+                    strcmp(clientes_conta_corrente[i], nova_conta) == 0)
+                {
+                    duplicada = 1;
+                    break;
+                }
+            }
+        } while (duplicada);
+
+        // Gerar novo CPF (também evitando duplicatas)
+        char novo_cpf[TAM_CPF];
+        do
+        {
+            gera_cpf_valido(novo_cpf);
+            duplicada = 0;
+            for (int i = 0; i < quantidade_clientes; i++)
+            {
+                if (i != indice_cliente && clientes_ativo[i] == 1 &&
+                    strcmp(clientes_cpf[i], novo_cpf) == 0)
+                {
+                    duplicada = 1;
+                    break;
+                }
+            }
+        } while (duplicada);
+
+        // Alterar no cadastro
+        strcpy(clientes_conta_corrente[indice_cliente], nova_conta);
+        strcpy(clientes_cpf[indice_cliente], novo_cpf);
+
+        printf("Conta e CPF alterados com sucesso!\n");
+        printf("Novo CPF: %s\n", clientes_cpf[indice_cliente]);
+        printf("Nova Conta: %s\n", clientes_conta_corrente[indice_cliente]);
+    }
+    else if (strcmp(resposta, "nao") == 0)
+    {
+        printf("Conta nao alterada.\n");
+    }
+    else
+    {
+        printf("Resposta invalida. Por favor, digite 'sim' ou 'nao'.\n");
+    }
 }
 
 
