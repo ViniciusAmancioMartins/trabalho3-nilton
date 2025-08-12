@@ -559,48 +559,50 @@ void ExibirMenuSaque()
 
     char confirmacao_resposta[TAM_RESPOSTA];
     printf("Confirmar saque? (SIM / NAO)\n");
-    int scan_status_confirmacao = scanf(" %s", confirmacao_resposta);
+    
+    while (1){
+        int scan_status_confirmacao = scanf(" %s", confirmacao_resposta);
+        while(getchar() != '\n');
+            if (scan_status_confirmacao != 1)
+            {
+                printf("Entrada invalida! Por favor, digite 'SIM' ou 'NAO'.\n");
+                continue;
+            }
 
-    if (scan_status_confirmacao != 1)
-    {
-        printf("Entrada invalida! Saque cancelado.\n");
-        while (getchar() != '\n')
-            ;
-        return;
-    }
 
-    for (int i = 0; confirmacao_resposta[i]; i++)
-    {
-        confirmacao_resposta[i] = tolower(confirmacao_resposta[i]);
-    }
+            for (int i = 0; confirmacao_resposta[i]; i++)
+            {
+                confirmacao_resposta[i] = tolower(confirmacao_resposta[i]);
+            }
 
-    if (strcmp(confirmacao_resposta, "sim") == 0)
-    {
-        clientes_numero_saques_realizados[indice_do_cliente]++;
-        total_money_retirado_por_cliente[indice_do_cliente] += valor_saque;
+            if (strcmp(confirmacao_resposta, "sim") == 0){
+                clientes_numero_saques_realizados[indice_do_cliente]++;
+                total_money_retirado_por_cliente[indice_do_cliente] += valor_saque;
 
-        for (int i = 0; i < NUM_CEDULAS; i++)
-        {
-            estoque_cedulas_atuais[i] -= cedulas_a_dispensar[i];
-        }
+                for (int i = 0; i < NUM_CEDULAS; i++)
+                {
+                    estoque_cedulas_atuais[i] -= cedulas_a_dispensar[i];
+                }
 
-        if (clientes_saques_contador[indice_do_cliente] < MAX_SAQUES_POR_CLIENTE)
-        {
-            clientes_historico_saques_valores[indice_do_cliente][clientes_saques_contador[indice_do_cliente]] = valor_saque;
-            clientes_saques_contador[indice_do_cliente]++;
-        }
-        else
-        {
-            printf("Aviso: Limite de registros de saques individuais para este cliente atingido.\n");
-        }
+                if (clientes_saques_contador[indice_do_cliente] < MAX_SAQUES_POR_CLIENTE)
+                {
+                    clientes_historico_saques_valores[indice_do_cliente][clientes_saques_contador[indice_do_cliente]] = valor_saque;
+                    clientes_saques_contador[indice_do_cliente]++;
+                }
+                else
+                {
+                    printf("Aviso: Limite de registros de saques individuais para este cliente atingido.\n");
+                }
 
-        printf("\nSaque de R$ %.2f realizado com sucesso!\n", valor_saque);
-        printf("Voce realizou %d de %d saques disponiveis.\n", clientes_numero_saques_realizados[indice_do_cliente], limites_saques_por_clientes);
-    }
-    else
-    {
-        printf("Saque cancelado pelo usuario\n");
-        return;
+                printf("\nSaque de R$ %.2f realizado com sucesso!\n", valor_saque);
+                printf("Voce realizou %d de %d saques disponiveis.\n", clientes_numero_saques_realizados[indice_do_cliente], limites_saques_por_clientes);
+                return;
+            } else if (strcmp(confirmacao_resposta, "nao") == 0){
+                printf("Saque cancelado pelo usuario\n");
+                return;
+            } else {
+                printf("Entrada invalida! Por favor, digite 'SIM' ou 'NAO'.\n");
+            }
     }
 }
 
@@ -864,8 +866,7 @@ void mostrarClientes()
             printf("Cliente na Posicao %d:\n", i); // Mostrar a posição real do array
             printf("CPF: %s\n", clientes_cpf[i]);
             printf("Conta: %s\n", clientes_conta_corrente[i]);
-            printf("Saldo: %.2f\n", clientes_historico_saques_valores[i]);
-            // Adicione outras informações se desejar, como número de saques
+            printf("Saldo de saques: %.2f\n", total_money_retirado_por_cliente[i]);
             printf("Numero de Saques Realizados: %d\n", clientes_numero_saques_realizados[i]);
             printf("--------------------------\n");
             clientes_exibidos++;
