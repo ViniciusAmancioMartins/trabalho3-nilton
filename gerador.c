@@ -52,7 +52,6 @@ int quantidade_clientes = 0;
 double clientes_historico_saques_valores[MAX_CLIENTES][MAX_SAQUES_POR_CLIENTE]; // historico dos valores dos saques por clientes
 int clientes_saques_contador[MAX_CLIENTES];                                     // Quantos saques cada cliente realizou (usado como contador de indices)
 
-/* --- Protótipos de Funções (para garantir a compilação, se não estiverem em ordem)
 void inicializar_historico_saque();
 char geraAlfabeto();
 char geraNumero();
@@ -79,7 +78,7 @@ void menuCliente(int opcao_cliente);
 void exibirMenuCliente();
 void MENU_PRINCIPAL(int opcao_principal);
 void exibirMenu();
-*/
+
 
 
 // objetivo:--
@@ -432,6 +431,22 @@ void QtdCedulasExistentes()
 }
 
 
+// --- FUNÇÕES AUXILIARES PARA CLIENTES ---
+// Função auxiliar para encontrar o índice de um cliente ativo pela conta.
+// Retorna o índice se o cliente for encontrado e ativo, -1 caso contrário.
+int encontrarClientePorConta(const char *conta)
+{
+    for (int i = 0; i < MAX_CLIENTES; i++) // Percorre todo o array de clientes
+    {
+        // Verifica se o cliente está ativo E se a conta corrente corresponde
+        if (clientes_ativo[i] == 1 && strcmp(clientes_conta_corrente[i], conta) == 0)
+        {
+            return i; // Cliente encontrado e ativo no índice 'i'
+        }
+    }
+    return -1; // Cliente não encontrado ou inativo
+}
+
 // objetivo:--
 // parâmetros: nenhum
 // retorno:nenhum
@@ -660,23 +675,6 @@ void ExibirMenuRelatorios()
     } while (opcaoRelatorio != 4);
 }
 // FIM FUNCOES RELATORIOS
-
-
-// --- FUNÇÕES AUXILIARES PARA CLIENTES ---
-// Função auxiliar para encontrar o índice de um cliente ativo pela conta.
-// Retorna o índice se o cliente for encontrado e ativo, -1 caso contrário.
-int encontrarClientePorConta(const char *conta)
-{
-    for (int i = 0; i < MAX_CLIENTES; i++) // Percorre todo o array de clientes
-    {
-        // Verifica se o cliente está ativo E se a conta corrente corresponde
-        if (clientes_ativo[i] == 1 && strcmp(clientes_conta_corrente[i], conta) == 0)
-        {
-            return i; // Cliente encontrado e ativo no índice 'i'
-        }
-    }
-    return -1; // Cliente não encontrado ou inativo
-}
 
 
 // Função auxiliar para verificar se o CPF ou a conta já existem entre clientes ATIVOS.
