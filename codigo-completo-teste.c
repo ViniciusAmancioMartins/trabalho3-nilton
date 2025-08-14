@@ -2,28 +2,55 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <ctype.h>
+#include <ctype.h> // Adicionado para tolower, para garantir compilação se ainda não estiver nos seus includes
 
+// ALTERAÇÕES FEITAS 31-07: modularizei a maior parte do codigo, e tambem iniciei a geracao de CPF, falta apenas fazer a parte de validacao e tals.
+//  ALTERAÇÕES FEITAS 7:08: conta corrente feita. Arrumei tambem os codigos de clientes, pois estava faltando umas coisas. amem
+/*
+12.800 de 1 real
+6.400 de 2 reais
+3.200 de 5 reais
+1.600 de 10 reais
+800 de 20 reais
+400 de 50 reais
+200 de 250 reais
+100 de 450 reais
+*/
+// --- Constantes Globais Clientes ---
 #define MAX_CLIENTES 50
-#define TAM_CPF 15
-#define TAM_CONTA 11
-#define TAM_RESPOSTA 5
-#define MAX_SAQUES_POR_CLIENTE 10
-#define MAX_TRANSACAO_INFO 50
+#define TAM_CPF 15     // "999.999.999-99\0" (14 chars + 1 \0)
+#define TAM_CONTA 11   // "999.999-X\0" (9 chars + 1 \0)
+#define TAM_RESPOSTA 5 // Para "SIM\0" ou "NAO\0"
+
+// --- Para o Historico de Saque (se for por cliente) ---
+#define MAX_SAQUES_POR_CLIENTE 10 // Maximo de saques que um cliente pode ter registrado
+#define MAX_TRANSACAO_INFO 50     // Tamanho da string para descrever cada transacao.
+
+// --- Para o Estoque de Cedulas do Caixa ---
 #define NUM_CEDULAS 8
 #define limites_saques_por_clientes 100
+int valor_cedulas[NUM_CEDULAS] = {1, 2, 5, 10, 20, 50, 250, 450};                        // Valores das cedulas
+int estoque_cedulas_atuais[NUM_CEDULAS] = {12800, 6400, 3200, 1600, 800, 400, 200, 100}; // Quantidade inicial
 
-int valor_cedulas[NUM_CEDULAS] = {1, 2, 5, 10, 20, 50, 250, 450};
-int estoque_cedulas_atuais[NUM_CEDULAS] = {12800, 6400, 3200, 1600, 800, 400, 200, 100};
-
-char clientes_cpf[MAX_CLIENTES][TAM_CPF];
-char clientes_conta_corrente[MAX_CLIENTES][TAM_CONTA];
-double total_money_retirado_por_cliente[MAX_CLIENTES];
-int clientes_numero_saques_realizados[MAX_CLIENTES];
-int clientes_ativo[MAX_CLIENTES];
+// --- Matrizes para os Dados dos Clientes (Globais) ---
+// Cada linha 'i' de cada matriz corresponde ao cliente 'i'
+char clientes_cpf[MAX_CLIENTES][TAM_CPF];              // clientes_cpf[0][057.957321-41]
+char clientes_conta_corrente[MAX_CLIENTES][TAM_CONTA]; // clientes_conta[0][XXX.XXXX-J]
+double total_money_retirado_por_cliente[MAX_CLIENTES]; // clientes_saldo[0] = 200 reais
+int clientes_numero_saques_realizados[MAX_CLIENTES];   // Contador de saques para cada cliente || //clientes_numeros_saques_realizados[0] = nº saques
+int clientes_ativo[MAX_CLIENTES];                      // 1 para ativo, 0 para inativo (exclusao logica) || clientes_ativo[0] = 0
+// se (clientes_ativo[i] = 0) entao
+// clientes_ativo[i] = vai receber novo cliente
+// Variável para manter o controle do número atual de clientes ativos
 int quantidade_clientes = 0;
-double clientes_historico_saques_valores[MAX_CLIENTES][MAX_SAQUES_POR_CLIENTE];
-int clientes_saques_contador[MAX_CLIENTES];
+
+// --- Matrizes para o Historico de Saques POR CLIENTE ---
+// Historico detalhado por cliente
+// 1. Conta corrente        cpf         valor
+// Cada cliente_historico_saque[i][j] possui o valor do j saque do cliente i
+// E clientes_saques_count[i] possui quantos saques o cliente i já realizou
+double clientes_historico_saques_valores[MAX_CLIENTES][MAX_SAQUES_POR_CLIENTE]; // historico dos valores dos saques por clientes
+int clientes_saques_contador[MAX_CLIENTES];                                     // Quantos saques cada cliente realizou (usado como contador de indices)
 
 const char *unidades[] = {"", "Um", "Dois", "Tres", "Quatro", "Cinco", "Seis", "Sete", "Oito", "Nove"};
 const char *dezenas[] = {"", "", "Vinte", "Trinta", "Quarenta", "Cinquenta", "Sessenta", "Setenta", "Oitenta", "Noventa"};
@@ -59,6 +86,9 @@ void exibirMenu();
 void numeroPorExtenso(int numero);
 int fazerSaque(int saqueCliente, int *estoque_cedulas, int indice_cliente);
 
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void inicializar_historico_saque() {
     for (int i = 0; i < MAX_CLIENTES; i++) {
         clientes_saques_contador[i] = 0;
@@ -68,16 +98,29 @@ void inicializar_historico_saque() {
     }
 }
 
+// objetivo:escolhe dentre as letras do alfabeto ('a'..'z') uma letra aleatoriamente
+// parametros: nenhum
+// retorno:a letra do alfabeto
 char geraAlfabeto() {
+    int i;
     char letras[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
-    return letras[rand() % 26] - 32;
+    i = rand() % 26;
+    return (letras[i] - 32);
 }
 
+// objetivo:escolhe dentre os numeros ('0'..'9') uma numero aleatoriamente
+// parametros: nenhum
+// retorno:o numero
 char geraNumero() {
+    int i;
     char numeros[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-    return numeros[rand() % 10];
+    i = rand() % 10;
+    return (numeros[i]);
 }
 
+// objetivo:gera aleatoriamente um numero de conta corrente no formato 999.999-X
+// parametros: c onde armazera a conta gerada
+// retorno:nenhum
 void geraContaCorrente(char c[]) {
     for (int i = 0; i < 3; i++) c[i] = geraNumero();
     c[3] = '.';
@@ -87,74 +130,149 @@ void geraContaCorrente(char c[]) {
     c[9] = '\0';
 }
 
+// objetivo:insere pontuacoes '.' e '- ' em um cpf
+// parametros: cpf_origem o cpf recebido no format 99999999999
+//             cpf_destino o cpf com as pontuacoes inseridas no formato 999.999.999-99
 void insere_pontuacao_cpf(char cpf_origem[], char cpf_destino[]) {
-    int i = 0, j = 0;
-    while (i < 11) {
-        cpf_destino[j++] = cpf_origem[i++];
-        if (i == 3 || i == 6) cpf_destino[j++] = '.';
-        else if (i == 9) cpf_destino[j++] = '-';
-    }
-    cpf_destino[j] = '\0';
-}
-
-int obtem_primeiro_digito_verificador(char cpf[]) {
-    int soma = 0, peso = 10;
-    for (int i = 0; i < 9; i++) {
-        soma += (cpf[i] - '0') * peso--;
-    }
-    int resto = soma % 11;
-    return resto < 2 ? 0 : 11 - resto;
-}
-
-int obtem_segundo_digito_verificador(char cpf[]) {
-    int soma = 0, peso = 11;
-    for (int i = 0; i < 10; i++) {
-        soma += (cpf[i] - '0') * peso--;
-    }
-    int resto = soma % 11;
-    return resto < 2 ? 0 : 11 - resto;
-}
-
-void gera_cpf_valido(char cpf[]) {
-    char cpf_temp_9[10], cpf_temp_10[11], cpf_temp_11[12];
-    for (int i = 0; i < 9; i++) cpf_temp_9[i] = (rand() % 10) + '0';
-    cpf_temp_9[9] = '\0';
-    cpf_temp_10[9] = (char)(obtem_primeiro_digito_verificador(cpf_temp_9) + '0');
-    cpf_temp_10[10] = '\0';
-    strncpy(cpf_temp_10, cpf_temp_9, 9);
-    cpf_temp_11[10] = (char)(obtem_segundo_digito_verificador(cpf_temp_10) + '0');
-    cpf_temp_11[11] = '\0';
-    strncpy(cpf_temp_11, cpf_temp_10, 10);
-    insere_pontuacao_cpf(cpf_temp_11, cpf);
-}
-
-int verifica_cpf_valido(char cpf[]) {
-    char cpf_digitos[12];
-    int j = 0;
-    for (int i = 0; cpf[i]; i++) {
-        if (cpf[i] >= '0' && cpf[i] <= '9') cpf_digitos[j++] = cpf[i];
-    }
-    cpf_digitos[j] = '\0';
-    if (strlen(cpf_digitos) != 11) return 0;
-    int todos_iguais = 1;
-    for (int k = 1; k < 11; k++) {
-        if (cpf_digitos[k] != cpf_digitos[0]) {
-            todos_iguais = 0;
-            break;
+    int iOrigem = 0, jDestino = 0;
+    while (iOrigem < 11) {
+        cpf_destino[jDestino] = cpf_origem[iOrigem];
+        iOrigem++;
+        jDestino++;
+        if (iOrigem == 3 || iOrigem == 6) {
+            cpf_destino[jDestino] = '.';
+            jDestino++;
+        } else if (iOrigem == 9) {
+            cpf_destino[jDestino] = '-';
+            jDestino++;
         }
     }
-    if (todos_iguais) return 0;
-    char cpf9[10];
-    strncpy(cpf9, cpf_digitos, 9);
-    cpf9[9] = '\0';
-    if (obtem_primeiro_digito_verificador(cpf9) != (cpf_digitos[9] - '0')) return 0;
-    char cpf10[11];
-    strncpy(cpf10, cpf_digitos, 10);
-    cpf10[10] = '\0';
-    if (obtem_segundo_digito_verificador(cpf10) != (cpf_digitos[10] - '0')) return 0;
-    return 1;
+    cpf_destino[jDestino] = '\0';
 }
 
+// objetivo:calcula o primeiro digito verificador de um cpf no formato 999999999
+// parametros: cpf o cpf sem os digitos verificadores
+// retorno: o calculo do primeiro digito verificador
+int obtem_primeiro_digito_verificador(char cpf[]) {
+    int digito;
+    int soma = 0;
+    int peso = 10;
+    for (int i = 0; i < 9; i++) {
+        int numero_cpf_separado = cpf[i] - '0';
+        soma += numero_cpf_separado * peso;
+        peso--;
+    }
+    int resto = soma % 11;
+    if (resto < 2) {
+        digito = 0;
+    } else {
+        digito = 11 - resto;
+    }
+    return digito;
+}
+
+// objetivo:calcula o segundo digito verificador de um cpf no formato 999999999
+// parametros: cpf sem os digitos verificadores
+// retorno: o calculo do segundo digito verificador
+int obtem_segundo_digito_verificador(char cpf[]) {
+    int digito;
+    int soma = 0;
+    int peso = 11;
+    for (int i = 0; i < 10; i++) {
+        int numero_cpf_separado = cpf[i] - '0';
+        soma += numero_cpf_separado * peso;
+        peso--;
+    }
+    int resto = soma % 11;
+    if (resto < 2) {
+        digito = 0;
+    } else {
+        digito = 11 - resto;
+    }
+    return digito;
+}
+
+// objetivo:gera aleatoriamente um cpf valido no formato 999.999.999-99
+// parametros: cpf onde sera armazenado o cpf valido
+// retorno: nenhum
+void gera_cpf_valido(char cpf[]) {
+    char cpf_temp_9_digitos[10];
+    char cpf_temp_10_digitos[11];
+    char cpf_temp_11_digitos[12];
+    int primeiro_verificador;
+    int segundo_verificador;
+    for (int i = 0; i < 9; i++) {
+        cpf_temp_9_digitos[i] = (rand() % 10) + '0';
+    }
+    cpf_temp_9_digitos[9] = '\0';
+    primeiro_verificador = obtem_primeiro_digito_verificador(cpf_temp_9_digitos);
+    strncpy(cpf_temp_10_digitos, cpf_temp_9_digitos, 9);
+    cpf_temp_10_digitos[9] = (char)(primeiro_verificador + '0');
+    cpf_temp_10_digitos[10] = '\0';
+    segundo_verificador = obtem_segundo_digito_verificador(cpf_temp_10_digitos);
+    strncpy(cpf_temp_11_digitos, cpf_temp_10_digitos, 10);
+    cpf_temp_11_digitos[10] = (char)(segundo_verificador + '0');
+    cpf_temp_11_digitos[11] = '\0';
+    insere_pontuacao_cpf(cpf_temp_11_digitos, cpf);
+}
+
+// objetivo:verifica se um cpf no formato 999.999.999-99 e valido
+// parametros: cpf a ser verificado
+// retorno: 1 se cpf e valido ou 0 se cpf nao e valido
+int verifica_cpf_valido(char cpf[]) {
+    int valido = 1;
+    char cpf_apenas_digito[12];
+    int i = 0;
+    int j = 0;
+    while (cpf[i] != '\0') {
+        if (cpf[i] >= '0' && cpf[i] <= '9') {
+            cpf_apenas_digito[j] = cpf[i];
+            j++;
+        }
+        i++;
+    }
+    cpf_apenas_digito[j] = '\0';
+    if (strlen(cpf_apenas_digito) != 11) {
+        valido = 0;
+    }
+    if (valido == 1) {
+        int todos_digitos_iguais = 1;
+        for (int k = 1; k < 11; k++) {
+            if (cpf_apenas_digito[k] != cpf_apenas_digito[0]) {
+                todos_digitos_iguais = 0;
+                break;
+            }
+        }
+        if (todos_digitos_iguais) {
+            valido = 0;
+        }
+    }
+    if (valido == 1) {
+        char cpf9_digitos_temp[10];
+        strncpy(cpf9_digitos_temp, cpf_apenas_digito, 9);
+        cpf9_digitos_temp[9] = '\0';
+        int primeiro_dv_calculado = obtem_primeiro_digito_verificador(cpf9_digitos_temp);
+        int primeiro_dv_fornecido = cpf_apenas_digito[9] - '0';
+        if (primeiro_dv_fornecido != primeiro_dv_calculado) {
+            valido = 0;
+        }
+    }
+    if (valido == 1) {
+        char cpf10_digitos_temp[11];
+        strncpy(cpf10_digitos_temp, cpf_apenas_digito, 10);
+        cpf10_digitos_temp[10] = '\0';
+        int segundo_dv_calculado = obtem_segundo_digito_verificador(cpf10_digitos_temp);
+        int segundo_dv_fornecido = cpf_apenas_digito[10] - '0';
+        if (segundo_dv_fornecido != segundo_dv_calculado) {
+            valido = 0;
+        }
+    }
+    return valido;
+}
+
+// objetivo:converte um número inteiro para sua representação por extenso em português
+// parâmetros: numero o número a ser convertido
+// retorno: nenhum
 void numeroPorExtenso(int numero) {
     if (numero == 0) return;
     int digitos[6] = {0}, contador = 0, temp = numero;
@@ -200,6 +318,9 @@ void numeroPorExtenso(int numero) {
     printf("\n");
 }
 
+// objetivo:realiza o saque, calcula as cédulas necessárias, atualiza o estoque e os dados do cliente
+// parâmetros: saqueCliente valor do saque, estoque_cedulas array de estoque de cédulas, indice_cliente índice do cliente
+// retorno: 1 se o saque for bem-sucedido, 0 caso contrário
 int fazerSaque(int saqueCliente, int *estoque_cedulas, int indice_cliente) {
     if (saqueCliente <= 0) {
         printf("Valor de saque inválido!\n");
@@ -253,6 +374,9 @@ int fazerSaque(int saqueCliente, int *estoque_cedulas, int indice_cliente) {
     }
 }
 
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void ExibirMenuSaque() {
     if (quantidade_clientes == 0) {
         printf("\n---Nenhum cliente registrado para poder efetuar o saque.---\n");
@@ -299,6 +423,10 @@ void ExibirMenuSaque() {
     } while (1);
 }
 
+// INICIO FUNCOES RELATORIOS
+// objetivo: Exibe o relatório de valores sacados por todos os clientes
+// parâmetros: nenhum
+// retorno: nenhum
 void valorSacado() {
     double total_geral = 0.0;
     int clientes_com_saques = 0;
@@ -325,6 +453,9 @@ void valorSacado() {
     }
 }
 
+// objetivo: Exibe o relatório do valor do saldo existente de todos os clientes ativos
+// parâmetros: nenhum
+// retorno: nenhum
 void valorSaldoExistente() {
     printf("\n--- Relatório Valor do Saldo Existente ---\n");
     int clientes_com_saldo = 0;
@@ -341,6 +472,9 @@ void valorSaldoExistente() {
     }
 }
 
+// objetivo: Exibe o relatório da quantidade de cédulas existentes no caixa
+// parâmetros: nenhum
+// retorno: nenhum
 void QtdCedulasExistentes() {
     printf("\n--- Relatório Quantidade de Cédulas Existentes ---\n");
     int tem_cedulas = 0;
@@ -357,6 +491,9 @@ void QtdCedulasExistentes() {
     }
 }
 
+// --- FUNÇÕES AUXILIARES PARA CLIENTES ---
+// Função auxiliar para encontrar o índice de um cliente ativo pela conta.
+// Retorna o índice se o cliente for encontrado e ativo, -1 caso contrário.
 int encontrarClientePorConta(const char *conta) {
     for (int i = 0; i < MAX_CLIENTES; i++) {
         if (clientes_ativo[i] == 1 && strcmp(clientes_conta_corrente[i], conta) == 0) {
@@ -366,6 +503,8 @@ int encontrarClientePorConta(const char *conta) {
     return -1;
 }
 
+// Função auxiliar para verificar se o CPF ou a conta já existem entre clientes ATIVOS.
+// Retorna 1 se for duplicado, 0 caso contrário.
 int cliente_duplicado(const char *cpf, const char *conta) {
     for (int i = 0; i < MAX_CLIENTES; i++) {
         if (clientes_ativo[i] == 1) {
@@ -377,9 +516,13 @@ int cliente_duplicado(const char *cpf, const char *conta) {
     return 0;
 }
 
+// Função interna para realizar o processo de cadastro de um único cliente
+// É chamada por incluirClientes
 void realizarCadastroClienteInterno() {
-    char novo_cpf[TAM_CPF], nova_conta[TAM_CONTA];
+    char novo_cpf_para_cliente[TAM_CPF];
+    char nova_conta_para_cliente[TAM_CONTA];
     int indice_disponivel = -1;
+    int deve_gerar_dados = 1;
     char resposta[TAM_RESPOSTA];
     for (int i = 0; i < MAX_CLIENTES; i++) {
         if (clientes_ativo[i] == 0) {
@@ -388,33 +531,34 @@ void realizarCadastroClienteInterno() {
         }
     }
     if (indice_disponivel == -1) {
-        printf("Erro: Não há slots disponíveis para novos clientes.\n");
+        printf("Erro: Não há slots disponíveis para novos clientes. Máximo de clientes atingido.\n");
         return;
     }
-    int deve_gerar_dados = 1;
     while (1) {
         if (deve_gerar_dados) {
-            gera_cpf_valido(novo_cpf);
-            geraContaCorrente(nova_conta);
-            if (cliente_duplicado(novo_cpf, nova_conta)) {
-                printf("CPF %s ou Conta %s já existem. Gerando novos dados...\n", novo_cpf, nova_conta);
+            gera_cpf_valido(novo_cpf_para_cliente);
+            geraContaCorrente(nova_conta_para_cliente);
+            if (cliente_duplicado(novo_cpf_para_cliente, nova_conta_para_cliente)) {
+                printf("CPF %s ou Conta %s já existem. Gerando novos dados...\n", novo_cpf_para_cliente, nova_conta_para_cliente);
             } else {
                 printf("Dados gerados e únicos:\n");
-                printf("  CPF: %s\n", novo_cpf);
-                printf("  Conta: %s\n", nova_conta);
+                printf("  CPF: %s\n", novo_cpf_para_cliente);
+                printf("  Conta: %s\n", nova_conta_para_cliente);
                 deve_gerar_dados = 0;
             }
         }
-        printf("Deseja continuar? (SIM / NAO)\n");
+        printf("Deseja continuar?(SIM / NAO)\n");
         if (scanf(" %s", resposta) != 1) {
-            printf("Entrada inválida! Digite 'sim' ou 'nao'.\n");
+            printf("Entrada inválida! Por favor, digite 'sim' ou 'nao'.\n");
             while (getchar() != '\n');
             continue;
         }
-        for (int i = 0; resposta[i]; i++) resposta[i] = tolower(resposta[i]);
+        for (int i = 0; resposta[i]; i++) {
+            resposta[i] = tolower(resposta[i]);
+        }
         if (strcmp(resposta, "sim") == 0) {
-            strcpy(clientes_cpf[indice_disponivel], novo_cpf);
-            strcpy(clientes_conta_corrente[indice_disponivel], nova_conta);
+            strcpy(clientes_cpf[indice_disponivel], novo_cpf_para_cliente);
+            strcpy(clientes_conta_corrente[indice_disponivel], nova_conta_para_cliente);
             total_money_retirado_por_cliente[indice_disponivel] = 0.0;
             clientes_numero_saques_realizados[indice_disponivel] = 0;
             clientes_saques_contador[indice_disponivel] = 0;
@@ -426,27 +570,32 @@ void realizarCadastroClienteInterno() {
             printf("Cadastro cancelado...\n");
             break;
         } else {
-            printf("Resposta inválida. Digite 'sim' ou 'nao'.\n");
+            printf("Resposta inválida. Por favor, digite 'sim' ou 'nao'.\n");
             while (getchar() != '\n');
         }
     }
 }
 
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void incluirClientes() {
     char resposta[TAM_RESPOSTA];
+    int resposta_valida = 0;
     if (quantidade_clientes >= MAX_CLIENTES) {
-        printf("Número máximo de clientes atingido.\n");
+        printf("Numero maximo de clientes atingido. Não é possível incluir mais clientes.\n");
         return;
     }
-    int resposta_valida = 0;
     do {
         printf("\nGostaria de incluir um novo cliente? (SIM / NAO)\n");
         if (scanf(" %s", resposta) != 1) {
-            printf("Entrada inválida! Digite 'sim' ou 'nao'.\n");
+            printf("Entrada inválida! Por favor, digite 'sim' ou 'nao'.\n");
             while (getchar() != '\n');
             continue;
         }
-        for (int i = 0; resposta[i]; i++) resposta[i] = tolower(resposta[i]);
+        for (int i = 0; resposta[i]; i++) {
+            resposta[i] = tolower(resposta[i]);
+        }
         if (strcmp(resposta, "sim") == 0) {
             printf("Iniciando o processo de inclusão de cliente...\n");
             realizarCadastroClienteInterno();
@@ -456,12 +605,15 @@ void incluirClientes() {
             resposta_valida = 1;
             break;
         } else {
-            printf("Resposta inválida. Digite 'sim' ou 'nao'.\n");
+            printf("Resposta inválida. Por favor, digite 'sim' ou 'nao'.\n");
             while (getchar() != '\n');
         }
-    } while (!resposta_valida);
+    } while (resposta_valida == 0);
 }
 
+// objetivo:--
+// parâmetros: nenhum
+// retorno:nenhum
 void mostrarClientes() {
     printf("\n--- Lista de Clientes Cadastrados ---\n");
     int clientes_exibidos = 0;
@@ -481,15 +633,21 @@ void mostrarClientes() {
     }
 }
 
+// objetivo:---
+// parâmetros: nenhum
+// retorno:nenhum
 void alterarClientes() {
-    char resposta[TAM_RESPOSTA], conta_alvo[TAM_CONTA];
+    char resposta[TAM_RESPOSTA];
+    char conta_alvo[TAM_CONTA];
     if (quantidade_clientes == 0) {
         printf("Nenhum cliente cadastrado para alterar.\n");
         return;
     }
     printf("Gostaria de alterar conta e cpf? (SIM / NAO)\n");
     scanf(" %s", resposta);
-    for (int i = 0; resposta[i]; i++) resposta[i] = tolower(resposta[i]);
+    for (int i = 0; resposta[i]; i++) {
+        resposta[i] = tolower(resposta[i]);
+    }
     if (strcmp(resposta, "sim") == 0) {
         printf("Digite o número da conta atual do cliente: ");
         scanf(" %s", conta_alvo);
@@ -503,56 +661,68 @@ void alterarClientes() {
             return;
         }
         int resposta_alterar;
-        printf("O que deseja modificar?\n1- CPF\n2- Conta Corrente\n");
-        scanf("%d", &resposta_alterar);
-        char novo_cpf[TAM_CPF], nova_conta[TAM_CONTA];
         int duplicada;
+        char novo_cpf[TAM_CPF];
+        char nova_conta[TAM_CONTA];
+        printf("O que deseja modificar?\n");
+        printf("1- CPF\n");
+        printf("2- Conta Corrente\n");
+        scanf("%d", &resposta_alterar);
         switch (resposta_alterar) {
             case 1:
                 do {
                     gera_cpf_valido(novo_cpf);
                     duplicada = 0;
-                    for (int i = 0; i < MAX_CLIENTES; i++) {
+                    for (int i = 0; i < quantidade_clientes; i++) {
                         if (i != indice_cliente && clientes_ativo[i] == 1 && strcmp(clientes_cpf[i], novo_cpf) == 0) {
                             duplicada = 1;
                             break;
                         }
                     }
-                } while (duplicada);
+                } while (duplicada == 1);
                 strcpy(clientes_cpf[indice_cliente], novo_cpf);
-                printf("CPF alterado com sucesso\nConta Corrente: %s\nNovo CPF: %s\n", clientes_conta_corrente[indice_cliente], clientes_cpf[indice_cliente]);
+                printf("CPF alterado com sucesso\n");
+                printf("Conta Corrente: %s\n", clientes_conta_corrente[indice_cliente]);
+                printf("Novo CPF: %s\n", clientes_cpf[indice_cliente]);
                 break;
             case 2:
                 do {
                     geraContaCorrente(nova_conta);
                     duplicada = 0;
-                    for (int i = 0; i < MAX_CLIENTES; i++) {
+                    for (int i = 0; i < quantidade_clientes; i++) {
                         if (i != indice_cliente && clientes_ativo[i] == 1 && strcmp(clientes_conta_corrente[i], nova_conta) == 0) {
                             duplicada = 1;
                             break;
                         }
                     }
-                } while (duplicada);
+                } while (duplicada == 1);
                 strcpy(clientes_conta_corrente[indice_cliente], nova_conta);
-                printf("Conta Corrente alterada com sucesso!\nAntiga Conta Corrente: %s\nNova Conta Corrente: %s\n", conta_alvo, clientes_conta_corrente[indice_cliente]);
+                printf("Conta Corrente alterada com sucesso!\n");
+                printf("Antiga Conta Corrente do usuario: %s\n", conta_alvo);
+                printf("Nova Conta Corrente: %s\n", clientes_conta_corrente[indice_cliente]);
                 break;
             default:
-                printf("Opção inválida, tente novamente\n");
+                printf("Opção digitada inválida, tente novamente\n");
                 break;
         }
     } else if (strcmp(resposta, "nao") == 0) {
         printf("Nada alterado.\n");
     } else {
-        printf("Resposta inválida. Digite 'sim' ou 'nao'.\n");
+        printf("Resposta inválida. Por favor, digite 'sim' ou 'nao'.\n");
     }
 }
 
+// objetivo: ---
+// parâmetros: nenhum
+// retorno:nenhum
 void excluirClientes() {
+    char resposta[TAM_RESPOSTA];
+    char conta_alvo[TAM_CONTA];
+    int resposta_valida_encontrada = 0;
     if (quantidade_clientes == 0) {
         printf("Nenhum cliente cadastrado para exclusão.\n");
         return;
     }
-    char conta_alvo[TAM_CONTA], resposta[TAM_RESPOSTA];
     printf("\n--- Excluir Cliente ---\n");
     printf("Digite o número da conta corrente a ser excluída: ");
     scanf(" %s", conta_alvo);
@@ -565,45 +735,76 @@ void excluirClientes() {
         printf("Erro: Não é possível excluir cliente com saques realizados.\n");
         return;
     }
-    int resposta_valida = 0;
     do {
         printf("Gostaria de excluir a conta %s (CPF: %s)? (SIM / NAO)\n", clientes_conta_corrente[indice_cliente], clientes_cpf[indice_cliente]);
         if (scanf(" %s", resposta) != 1) {
-            printf("Entrada inválida! Digite 'sim' ou 'nao'.\n");
+            printf("Entrada inválida! Por favor, digite 'sim' ou 'nao'.\n");
             while (getchar() != '\n');
             continue;
         }
-        for (int i = 0; resposta[i]; i++) resposta[i] = tolower(resposta[i]);
+        for (int i = 0; resposta[i]; i++) {
+            resposta[i] = tolower(resposta[i]);
+        }
         if (strcmp(resposta, "sim") == 0) {
             clientes_ativo[indice_cliente] = 0;
             quantidade_clientes--;
             printf("Conta excluída com sucesso.\n");
-            resposta_valida = 1;
+            resposta_valida_encontrada = 1;
         } else if (strcmp(resposta, "nao") == 0) {
             printf("Conta não excluída.\n");
-            resposta_valida = 1;
+            resposta_valida_encontrada = 1;
         } else {
-            printf("Resposta inválida. Digite 'sim' ou 'nao'.\n");
+            printf("Resposta inválida. Por favor, digite 'sim' ou 'nao'.\n");
             while (getchar() != '\n');
         }
-    } while (!resposta_valida);
+    } while (resposta_valida_encontrada == 0);
 }
 
+// objetivo:Gerenciar o menu de opções do cliente.
+//          Permite ao usuário selecionar ações como incluir, mostrar, alterar e excluir clientes.
+//          Continua exibindo o menu até que o usuário escolha a opção 'Voltar'.
+// parâmetros: nenhum
+// retorno:nenhum
 void menuCliente(int opcao_cliente) {
     switch (opcao_cliente) {
-        case 1: incluirClientes(); break;
-        case 2: mostrarClientes(); break;
-        case 3: alterarClientes(); break;
-        case 4: excluirClientes(); break;
-        case 5: printf("Voltando...\n"); break;
-        default: printf("Opção Inválida!\n"); break;
+        case 1:
+            printf("Incluir Cliente\n");
+            incluirClientes();
+            break;
+        case 2:
+            printf("Mostrar Clientes\n");
+            mostrarClientes();
+            break;
+        case 3:
+            printf("Alterar Cliente\n");
+            alterarClientes();
+            break;
+        case 4:
+            printf("Excluir Cliente\n");
+            excluirClientes();
+            break;
+        case 5:
+            printf("Voltando...\n");
+            break;
+        default:
+            printf("Opção Inválida!\n");
+            break;
     }
 }
 
+// objetivo:Exibir o menu de opções do cliente.
+// parámetros: nenhum
+// retorno:nenhum
 void exibirMenuCliente() {
     int opcaoCliente;
     do {
-        printf("\nMenu Cliente\n1 - Incluir\n2 - Mostrar\n3 - Alterar\n4 - Excluir\n5 - Voltar\nEscolha uma opção: ");
+        printf("\nMenu Cliente\n");
+        printf("1 - Incluir\n");
+        printf("2 - Mostrar\n");
+        printf("3 - Alterar\n");
+        printf("4 - Excluir\n");
+        printf("5 - Voltar\n");
+        printf("Escolha uma opção: ");
         if (scanf("%d", &opcaoCliente) != 1) {
             while (getchar() != '\n');
             printf("Entrada inválida! Tente novamente.\n");
@@ -613,20 +814,43 @@ void exibirMenuCliente() {
     } while (opcaoCliente != 5);
 }
 
+// objetivo:Gerenciar o menu de opções do relatorio
+//          Permite ao usuário selecionar ações como valor sacado, saldo existente etc
+//          Continua exibindo o menu até que o usuário escolha a opção 'Voltar'.
+// parâmetros: nenhum
+// retorno:nenhum
 void MenuRelatorios(int opcaoRelatorio) {
     switch (opcaoRelatorio) {
-        case 1: valorSacado(); break;
-        case 2: valorSaldoExistente(); break;
-        case 3: QtdCedulasExistentes(); break;
-        case 4: printf("Voltando ao menu principal...\n"); break;
-        default: printf("Opção Inválida!\n"); break;
+        case 1:
+            valorSacado();
+            break;
+        case 2:
+            valorSaldoExistente();
+            break;
+        case 3:
+            QtdCedulasExistentes();
+            break;
+        case 4:
+            printf("Voltando ao menu principal...\n");
+            break;
+        default:
+            printf("Opção Inválida!\n");
+            break;
     }
 }
 
+// objetivo:Exibir o menu de Relatorios
+// parámetros: nenhum
+// retorno:nenhum
 void ExibirMenuRelatorios() {
     int opcaoRelatorio;
     do {
-        printf("\nRelatórios\n1 - Valores sacados\n2 - Valor do saldo existente\n3 - Quantidade de cédulas existentes\n4 - Voltar ao Menu Principal\nEscolha uma opção: ");
+        printf("\nRelatórios\n");
+        printf("1 - Valores sacados\n");
+        printf("2 - Valor do saldo existente\n");
+        printf("3 - Quantidade de cédulas existentes\n");
+        printf("4 - Voltar ao Menu Principal\n");
+        printf("Escolha uma opção: ");
         if (scanf("%d", &opcaoRelatorio) != 1) {
             while (getchar() != '\n');
             printf("Entrada inválida! Tente novamente.\n");
@@ -636,20 +860,43 @@ void ExibirMenuRelatorios() {
     } while (opcaoRelatorio != 4);
 }
 
+// objetivo:Gerenciar o menu de opções do menu principal
+//          Permite ao usuário gerenciar os outros menus
+//          Continua exibindo o menu até que o usuário escolha a opção 'finalizar'.
+// parámetros: nenhum
+// retorno:nenhum
 void MENU_PRINCIPAL(int opcao_principal) {
     switch (opcao_principal) {
-        case 1: exibirMenuCliente(); break;
-        case 2: ExibirMenuSaque(); break;
-        case 3: ExibirMenuRelatorios(); break;
-        case 4: printf("Caixa Finalizado!\n"); break;
-        default: printf("Opção Inválida!\n"); break;
+        case 1:
+            exibirMenuCliente();
+            break;
+        case 2:
+            ExibirMenuSaque();
+            break;
+        case 3:
+            ExibirMenuRelatorios();
+            break;
+        case 4:
+            printf("Caixa Finalizado!\n");
+            break;
+        default:
+            printf("Opção Inválida!\n");
+            break;
     }
 }
 
+// objetivo:Exibir o menu de opções do menu principal
+// parámetros: nenhum
+// retorno:nenhum
 void exibirMenu() {
     int opcao_printar;
     do {
-        printf("\nMENU PRINCIPAL\n1 - Cliente\n2 - Saque\n3 - Relatórios\n4 - Finalizar\nEscolha uma opção: ");
+        printf("\nMENU PRINCIPAL\n");
+        printf("1 - Cliente\n");
+        printf("2 - Saque\n");
+        printf("3 - Relatórios\n");
+        printf("4 - Finalizar\n");
+        printf("Escolha uma opção: ");
         if (scanf("%d", &opcao_printar) != 1) {
             while (getchar() != '\n');
             printf("Entrada inválida! Tente novamente.\n");
