@@ -4,6 +4,8 @@
 #include <time.h>
 #include <ctype.h>
 
+//Alunos: Ryan Roberto Lima Campos, João Pedro Schons Martins. Vinícius Amâncio Martins Pereira, Thais
+
 // --- Constantes Globais Clientes ---
 #define MAX_CLIENTES 50
 #define TAM_CPF 15     // "999.999.999-99\0" (14 chars + 1 \0)
