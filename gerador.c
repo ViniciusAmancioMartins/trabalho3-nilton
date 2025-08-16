@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <ctype.h>
 
 // --- Constantes Globais Clientes ---
@@ -780,46 +781,56 @@ void alterarClientes()
     // --- 1. Validacao da resposta inicial "SIM / NAO" ---
     // Este loop garante que o usuario digite SIM ou NAO corretamente
     int confirmacao_inicial_valida = 0;
-    do {
+    do
+    {
         printf("Gostaria de alterar conta e cpf? (SIM / NAO)\n");
         // Verifica se a leitura foi bem sucedida
-        if (scanf(" %s", resposta) != 1) {
+        if (scanf(" %s", resposta) != 1)
+        {
             printf("Entrada invalida! Por favor, digite 'SIM' ou 'NAO'.\n");
             // Limpa o buffer do teclado para evitar loop infinito de entrada invalida
-            while (getchar() != '\n');
+            while (getchar() != '\n')
+                ;
             continue; // Repete o loop para pedir a resposta inicial novamente
         }
 
         // Converte a resposta para minusculas para facilitar a comparacao
-        for (int i = 0; resposta[i]; i++) {
+        for (int i = 0; resposta[i]; i++)
+        {
             resposta[i] = tolower(resposta[i]);
         }
 
-        if (strcmp(resposta, "sim") == 0) {
+        if (strcmp(resposta, "sim") == 0)
+        {
             confirmacao_inicial_valida = 1; // Resposta valida e positiva, permite sair do loop
-        } else if (strcmp(resposta, "nao") == 0) {
+        }
+        else if (strcmp(resposta, "nao") == 0)
+        {
             printf("Alteracao de cliente cancelada.\n");
             return; // Resposta valida e negativa, sai da funcao
-        } else {
+        }
+        else
+        {
             printf("Resposta invalida. Por favor, digite 'SIM' ou 'NAO'.\n");
             // Se a resposta for invalida, 'confirmacao_inicial_valida' permanece 0, e o loop continua.
         }
     } while (!confirmacao_inicial_valida); // Continua ate uma resposta valida ser dada
 
-    // Se chegou aqui, o usuario respondeu 'SIM' a primeira pergunta.
-
     // --- 2. Loop para encontrar e validar a conta do cliente ---
-    // Este loop garante que o usuario digite uma conta existente e elegivel para alteracao
     int conta_valida_e_elegivel_encontrada = 0;
-    do {
+    do
+    {
         printf("Digite o numero da conta atual do cliente: ");
         // Verifica se a leitura da conta foi bem sucedida
-        if (scanf(" %10s", conta_alvo) != 1) { // %10s para evitar buffer overflow, considerando TAM_CONTA 11
+        if (scanf(" %10s", conta_alvo) != 1)
+        { // %10s para evitar buffer overflow, considerando TAM_CONTA 11
             printf("Entrada invalida! Por favor, digite a conta no formato 999.999-x.\n");
-            while (getchar() != '\n'); // Limpa o buffer
+            while (getchar() != '\n')
+                ;     // Limpa o buffer
             continue; // Repete o loop para pedir a conta novamente
         }
-        while (getchar() != '\n'); // Limpa o buffer apos a leitura (importante para string)
+        while (getchar() != '\n')
+            ; // Limpa o buffer apos a leitura (importante para string)
 
         indice_cliente = encontrarClientePorConta(conta_alvo);
 
@@ -844,7 +855,6 @@ void alterarClientes()
     int duplicada;
 
     // --- 3. Loop para a escolha do que modificar (CPF ou Conta Corrente) ---
-    // Este loop garante que o usuario digite 1 ou 2 corretamente
     int opcao_alteracao_valida = 0;
     do
     {
@@ -856,14 +866,19 @@ void alterarClientes()
         if (scanf("%d", &resposta_alterar) != 1)
         {
             printf("Entrada invalida! Por favor, digite 1 para CPF ou 2 para Conta Corrente.\n");
-            while (getchar() != '\n'); // Limpa o buffer
+            while (getchar() != '\n')
+                ;     // Limpa o buffer
             continue; // Repete o loop para pedir a opcao novamente
         }
-        while (getchar() != '\n'); // Limpa o buffer apos ler o int
+        while (getchar() != '\n')
+            ; // Limpa o buffer apos ler o int
 
-        if (resposta_alterar == 1 || resposta_alterar == 2) {
+        if (resposta_alterar == 1 || resposta_alterar == 2)
+        {
             opcao_alteracao_valida = 1; // Opcao valida, permite sair do loop
-        } else {
+        }
+        else
+        {
             printf("Opcao invalida! Por favor, digite 1 para CPF ou 2 para Conta Corrente.\n");
             // Se a opcao for invalida, 'opcao_alteracao_valida' permanece 0, e o loop continua.
         }
@@ -888,7 +903,7 @@ void alterarClientes()
                 }
             }
         } while (duplicada); // Continua gerando CPF ate que nao seja duplicado para nenhum outro cliente
-        
+
         strcpy(clientes_cpf[indice_cliente], novo_cpf);
         printf("CPF alterado com sucesso!\n");
         printf("Conta Corrente: %s\n", clientes_conta_corrente[indice_cliente]);
@@ -910,7 +925,7 @@ void alterarClientes()
                 }
             }
         } while (duplicada); // Continua gerando conta ate que nao seja duplicada para nenhum outro cliente
-        
+
         strcpy(clientes_conta_corrente[indice_cliente], nova_conta);
         printf("Conta Corrente alterada com sucesso!\n");
         printf("Antiga Conta Corrente: %s\n", conta_alvo);
@@ -922,7 +937,8 @@ void alterarClientes()
 // objetivo: exclui um cliente existente
 // parametros: nenhum
 // retorno: nenhum
-void excluirClientes(){
+void excluirClientes()
+{
     int indice_cliente;
     if (quantidade_clientes == 0)
     {
@@ -1126,6 +1142,7 @@ void exibirMenu()
 
 int main()
 {
+    srand(time(NULL));
     inicializar_historico_saque();
     printf("Bem-Vindo ao Sistema!\n");
     exibirMenu();
